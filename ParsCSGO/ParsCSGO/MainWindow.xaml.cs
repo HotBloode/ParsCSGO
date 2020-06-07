@@ -19,7 +19,7 @@ namespace ParsCSGO
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            p.Parse();           
+            p.ParsePageAsync();           
         }
 
         private void Button_Click1(object sender, RoutedEventArgs e)

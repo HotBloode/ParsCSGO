@@ -1,5 +1,6 @@
 ﻿using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -11,18 +12,39 @@ namespace ParsCSGO
     class Parser
     {
         string url;
-
+        string baseUrl = "https://miped.ru/f/threads/promokody-dlja-sajta-gocs-pro-obschaja-tema.67618/page-";
         public List<Repoz> db = new List<Repoz>();
 
+        int lastPage;
+        int startPage;
 
         void LUrl()
-        {
-            url = File.ReadAllText("Url.json");
+        {           
+            startPage = Convert.ToInt32(File.ReadAllText("Url.json"));
         }
 
-        public async Task<string> GetHtmlPage()
+        public async Task ParsePageAsync()
         {
             LUrl();
+            url = baseUrl + startPage;
+            var source = await GetHtmlPage();
+            var domParser = new HtmlParser();
+            var doc = await domParser.ParseDocumentAsync(source);
+            var list = new List<string>();
+            lastPage = Convert.ToInt32(doc.QuerySelector("input[max]").Attributes[5].Value);
+
+
+            for (int i = startPage; i < lastPage; i++)
+            {
+                url = baseUrl + i;
+                //url = baseUrl + startPage;
+                ParseCode();
+            }
+
+        }
+
+         async Task<string> GetHtmlPage()
+        {            
             string source = null;
             HttpClient client = new HttpClient();
             var respose = await client.GetAsync(url);
@@ -33,9 +55,8 @@ namespace ParsCSGO
             return source;
         }
 
-        public async Task<IHtmlDocument> Parse()
-        {
-
+         async Task<IHtmlDocument> ParseCode()
+        {            
             var source = await GetHtmlPage();//Получаем HTML код
             var domParser = new HtmlParser();
             var doc = await domParser.ParseDocumentAsync(source);
@@ -51,17 +72,7 @@ namespace ParsCSGO
             string x = @"(([A-Z]|\d){7,8}(<br>|</div))";        
             Regex regex = new Regex(x);
 
-            //MatchCollection matches = regex.Matches(list[0]);
-
-            //List<string> myMatches = new List<string>();
-
-            //foreach (var match in matches)
-            //{
-            //    myMatches.Add(match.ToString().Split('<')[0]);
-            //}
-
             MatchCollection matches;
-
 
             foreach (var mes in list)
             {
@@ -72,10 +83,6 @@ namespace ParsCSGO
                     db.Add(new Repoz(match.ToString().Split('<')[0], System.DateTime.Now));
                 }
             }
-
-            int a = 0;
-
-
 
             return doc;
         }
