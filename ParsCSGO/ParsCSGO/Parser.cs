@@ -13,15 +13,27 @@ namespace ParsCSGO
 {
     class Parser
     {       
-        public ListView mainList;        
+        //Ссылка на список кодов в главном окне
+        public ListView mainList;
+        //Ссылка на бокс с к-ов кодов
+        public TextBox Text;
+        //Полная url
+        //Полная urд парса
         string url;
+        //Переменная таймера
+        public int timer = 420000;
+        //Базовая ссылка на форум
         string baseUrl = "https://miped.ru/f/threads/promokody-dlja-sajta-gocs-pro-obschaja-tema.67618/page-";
+        //Список с кодами
         public List<Repoz> db = new List<Repoz>();
 
         bool globalFlag = false;
+        //Начальная страница для парса
         int lastPage;
+        //Конечная страница для парса
         int startPage;      
 
+        //Подгрузка последней страници котоорую парсили
         void LUrl()
         {           
             startPage = Convert.ToInt32(File.ReadAllText("Url.json"));
@@ -34,41 +46,59 @@ namespace ParsCSGO
                 LUrl();
                 globalFlag = false;
                 url = baseUrl + startPage;
+                //Получаем html страницу
                 var source = await GetHtmlPage();
                 var domParser = new HtmlParser();
                 var doc = await domParser.ParseDocumentAsync(source);
                 var list = new List<string>();
+                //Ищем последнюю страницу с кодами на форуме
                 lastPage = Convert.ToInt32(doc.QuerySelector("input[max]").Attributes[5].Value);
 
-
+                //Перебираем все стр. от начальной до последней
                 for (int i = startPage; i <= lastPage; i++)
                 {
+                    //Формируем полную ссылку для парса
                     url = baseUrl + i;
+
+                    //Вызываем функцию парса. Если были новые коды, то возвращает true
                     bool flag = await ParseCode();
+
+                    //Проверка флага "новизны"
                     if (flag)
                     {
+                        //Поднятие главного флага, если за 1 подход парса есть новые коды
                         globalFlag = true;
                     }
                 }
 
+                //Если  гл. флаг поднят
                 if (globalFlag)
                 {
-                    SystemSounds.Beep.Play();                     
-                    mainList.Dispatcher.Invoke(new Action(() => mainList.Items.Refresh()));                    
-                }                
-                //Thread.Sleep(300000);
+                    //Звуковое оповещение
+                    SystemSounds.Beep.Play(); 
+                    //Обновляем список в главном потоке
+                    mainList.Dispatcher.Invoke(new Action(() => mainList.Items.Refresh()));
+                    //Обновляем к-во кодов в главном потоке
+                    Text.Dispatcher.Invoke(new Action(() => Text.Text="Всего кодов: " +db.Count));
+                }
+                //Записывем номер последней пропарсеной стр. в файл
                 File.WriteAllText("Url.json", Convert.ToString(lastPage));
-                Thread.Sleep(10000);
+                //Усыпляем поток
+                Thread.Sleep(timer);
             }
         }        
 
         async Task<string> GetHtmlPage()
         {            
+            //Код стр.
             string source = null;
+            //КЛиент
             HttpClient client = new HttpClient();
+            //Скачиваем стр.
             var respose = await client.GetAsync(url);
             if (respose != null && respose.StatusCode == System.Net.HttpStatusCode.OK)
             {
+                //Сохраняем и отдаём стр.
                 source = await respose.Content.ReadAsStringAsync();               
             }
             return source;
@@ -76,20 +106,24 @@ namespace ParsCSGO
 
         async Task<bool> ParseCode()
         {
+            //Флаг новизны
             bool flagAdd = false;
             var source = await GetHtmlPage();//Получаем HTML код
+
             var domParser = new HtmlParser();
+
             var doc = await domParser.ParseDocumentAsync(source);
 
             var list = new List<string>();
 
+            //Парсим посты со стр.
             var items = doc.QuerySelectorAll(".message-main");
             foreach (var item in items)
             {
                 list.Add(item.OuterHtml.Substring(10));
             }
-            
-            string x = @"(([A-Z]|\d){7,8}(<br>|</div))";        
+            //Регулярка под коды
+            string x = @"(([A-Z]|\d){7,8}\s*(<br>|</div|</b>|\n))";        
             Regex regex = new Regex(x);
 
             MatchCollection matches;
@@ -98,11 +132,15 @@ namespace ParsCSGO
             {
                 matches = regex.Matches(mes);
 
+                //Парсим регуляркой
                 foreach (var match in matches)
                 {
-                    if (CheckDublicate(match.ToString().Split('<')[0]))
+                    //Удаляем пробелы и всякие скобочки, а так же чекаем дубликаты
+                    if (CheckDublicate(match.ToString().Split('<')[0].Replace("\n","")))
                     {
-                        db.Add(new Repoz(match.ToString().Split('<')[0], System.DateTime.Now));
+                        //Добавляем в базу
+                        db.Add(new Repoz(match.ToString().Split('<')[0].Replace("\n", ""), System.DateTime.Now));
+                        //Поднимаем флаг уникальности
                         flagAdd = true;
                     }                  
                 }                
@@ -111,6 +149,7 @@ namespace ParsCSGO
             return flagAdd;
         }
 
+        //Проверка кодов на дубликаты в списке
         bool CheckDublicate(string code)
         {
             for (int i = 0; i < db.Count; i++)
