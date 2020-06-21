@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace ParsCSGO
@@ -43,49 +44,64 @@ namespace ParsCSGO
         {
             while (true)
             {
-                LUrl();
-                globalFlag = false;
-                url = baseUrl + startPage;
-                //Получаем html страницу
-                var source = await GetHtmlPage();
-                var domParser = new HtmlParser();
-                var doc = await domParser.ParseDocumentAsync(source);
-                var list = new List<string>();
-                //Ищем последнюю страницу с кодами на форуме
-                lastPage = Convert.ToInt32(doc.QuerySelector("input[max]").Attributes[5].Value);
-
-                //Перебираем все стр. от начальной до последней
-                for (int i = startPage; i <= lastPage; i++)
+                try
                 {
-                    //Формируем полную ссылку для парса
-                    url = baseUrl + i;
+                    LUrl();
+                    globalFlag = false;
+                    url = baseUrl + startPage;
+                    //Получаем html страницу
+                    var source = await GetHtmlPage();
+                    var domParser = new HtmlParser();
+                    var doc = await domParser.ParseDocumentAsync(source);
+                    var list = new List<string>();
+                    //Ищем последнюю страницу с кодами на форуме
+                    lastPage = Convert.ToInt32(doc.QuerySelector("input[max]").Attributes[5].Value);
 
-                    //Вызываем функцию парса. Если были новые коды, то возвращает true
-                    bool flag = await ParseCode();
-
-                    //Проверка флага "новизны"
-                    if (flag)
+                    //Перебираем все стр. от начальной до последней
+                    for (int i = startPage; i <= lastPage; i++)
                     {
-                        //Поднятие главного флага, если за 1 подход парса есть новые коды
-                        globalFlag = true;
-                    }
-                }
+                        //Формируем полную ссылку для парса
+                        url = baseUrl + i;
 
-                //Если  гл. флаг поднят
-                if (globalFlag)
-                {
-                    //Звуковое оповещение
-                    SystemSounds.Beep.Play(); 
-                    //Обновляем список в главном потоке
-                    mainList.Dispatcher.Invoke(new Action(() => mainList.Items.Refresh()));
-                    //Обновляем к-во кодов в главном потоке
-                    Text.Dispatcher.Invoke(new Action(() => Text.Text="Всего кодов: " +db.Count));
+                        //Вызываем функцию парса. Если были новые коды, то возвращает true
+                        bool flag = await ParseCode();
+
+                        //Проверка флага "новизны"
+                        if (flag)
+                        {
+                            //Поднятие главного флага, если за 1 подход парса есть новые коды
+                            globalFlag = true;
+                        }
+                    }
+
+                    //Если  гл. флаг поднят
+                    if (globalFlag)
+                    {
+                        //Звуковое оповещение
+                        SystemSounds.Beep.Play();
+                        //Обновляем список в главном потоке
+                        mainList.Dispatcher.Invoke(new Action(() => mainList.Items.Refresh()));
+                        //Обновляем к-во кодов в главном потоке
+                        Text.Dispatcher.Invoke(new Action(() => Text.Text = "Всего кодов: " + db.Count));
+                    }
+                    //Записывем номер последней пропарсеной стр. в файл
+                    File.WriteAllText("Url.json", Convert.ToString(lastPage));
+                    Thread.Sleep(timer);
                 }
-                //Записывем номер последней пропарсеной стр. в файл
-                File.WriteAllText("Url.json", Convert.ToString(lastPage));
-                //Усыпляем поток
-                Thread.Sleep(timer);
+                catch(HttpRequestException e)
+                {
+                    MessageBox.Show($"Ошибка c интернет подключением! Проверьте подключение. Парсер перезапустится через указанную вами паузу!");
+                    //Усыпляем поток
+                    Thread.Sleep(timer);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show($"Ошибка (Сообщите о ней разработчику). Программа перезапустится через указанную вами паузу>> {e.Message} {e.GetType()}");
+                    //Усыпляем поток
+                    Thread.Sleep(timer);
+                }
             }
+                
         }        
 
         async Task<string> GetHtmlPage()

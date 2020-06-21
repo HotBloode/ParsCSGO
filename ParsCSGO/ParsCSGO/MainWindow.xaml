@@ -5,16 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ParsCSGO"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="558.265" MinHeight="450" MaxHeight="450" MaxWidth="800" MinWidth="558.265">
-    <Grid Margin="0,0,2.8,0">
+        Title="MainWindow" Height="450" Width="370.455" MinHeight="450" MaxHeight="450" MaxWidth="370.455" MinWidth="370.455">
+    <Grid Margin="0,0,-100.6,0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="107*"/>
-            <ColumnDefinition Width="76*"/>
+            <ColumnDefinition Width="95*"/>
+            <ColumnDefinition Width="216*"/>
         </Grid.ColumnDefinitions>
 
 
 
-        <ListView  x:Name="logList" Margin="8.2,10,0,10" Grid.Column="1" HorizontalAlignment="Left" Width="210">
+        <ListView  x:Name="logList" Margin="2.8,10,0,10" Grid.Column="1" HorizontalAlignment="Left" Width="210">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Gode" DisplayMemberBinding="{Binding Code}" />
@@ -22,14 +22,14 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <Button Name="StartButton" Content="Start" HorizontalAlignment="Left" Margin="22,12,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click" Height="19" />
-        <Button Content="Clear" HorizontalAlignment="Left" Margin="22,40,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1" Height="19"/>
+        <Button Name="StartButton" Content="Start" HorizontalAlignment="Left" Margin="10,17,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click" Height="19" />
+        <Button Content="Clear" HorizontalAlignment="Left" Margin="10,45,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1" Height="19"/>
 
-        <TextBox Name="TextToCopy" HorizontalAlignment="Left" Height="23" Margin="188,12,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="120"
-                 Text="{Binding ElementName=logList, Path=SelectedItem.Code}" TextChanged="TextBox_TextChanged"
+        <TextBox Name="TextToCopy" HorizontalAlignment="Left" Height="23" Margin="10,121,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="120"
+                 Text="{Binding ElementName=logList, Path=SelectedItem.Code}" TextChanged="TextBox_TextChanged" Grid.ColumnSpan="2"
                  />
-        <TextBox Name="TextCount" HorizontalAlignment="Left" Height="23" Margin="188,40,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="120"/>
-        <TextBox Name="TimerBox" HorizontalAlignment="Left" Height="23" Margin="22,72,0,0" TextWrapping="Wrap" Text="7" VerticalAlignment="Top" Width="75" VerticalScrollBarVisibility="Visible"/>
+        <TextBox Name="TextCount" HorizontalAlignment="Left" Height="23" Margin="10,149,0,0" TextWrapping="Wrap"  VerticalAlignment="Top" Width="120" Grid.ColumnSpan="2"/>
+        <TextBox Name="TimerBox" HorizontalAlignment="Left" Height="23" Margin="10,77,0,0" TextWrapping="Wrap" Text="7" VerticalAlignment="Top" Width="75" VerticalScrollBarVisibility="Visible"/>
 
     </Grid>
 </Window>
